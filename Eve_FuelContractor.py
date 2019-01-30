@@ -3,13 +3,17 @@ import urllib3.request
 import urllib3.connection
 import xml.etree.ElementTree as ET
 
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
 def SQLite():
     """
     Returns SQLite cursor
     """
 
     # ROOT DIRECTORY#
-    root = 'C:/Users/ScaryDomain/PycharmProjects/fbTrack/venv/'
+    #root = 'C:/Users/ScaryDomain/PycharmProjects/fbTrack/venv/'
+    root = 'C:/Users/kczarniecki/Documents/eveMoneyMaker'
     ###
 
     # SQLITE Connector
@@ -66,6 +70,26 @@ def getRegions():
     return regions.fetchall()
 
 
+def getPrice(itemType, orderType, region = None):
+    
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    url = 'https://api.evemarketer.com/ec/marketstat?typeid=' + str(itemType)
+
+    if(region != None):
+        url += '&regionlimit=' + str(region)
+
+    http = urllib3.PoolManager()
+    request = http.request('GET', url)
+    request = request.data
+    tree = ET.fromstring(request)
+
+    for t in tree.iter(orderType):
+        ret = float(t.find('max').text)
+
+    return ret
+
+
+
 
 
 ##### REGION LIST ######
@@ -78,16 +102,16 @@ regionIDs = getRegions()
 fbid = 4246
 ###
 
-url = 'https://api.evemarketer.com/ec/marketstat?typeid=34'
 
-http = urllib3.PoolManager()
-test = http.request('GET', url)
 
-test = test.data
+scope = ['https://spreadsheets.google.com/feeds']
+creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
+client = gspread.authorize(creds)
 
-tree = ET.fromstring(test)
+sheet = client.open("Main").sheet1
 
-for t in tree.iter('sell'):
-    print(t.text)
-    print(t.find('max').text)
-    print(t.text)
+
+
+
+#ADD FUNCTION THAT WILL ALLOW TO DISPLAY TOP 10 BEST DEALS IN PROVIDED REGION FOR CURRENT PRODUCT
+#AND THAT WILL WRITE TO THE SPREADSHEET
